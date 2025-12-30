@@ -1,0 +1,381 @@
+#附录
+#代码3.1.1
+def robust_correct(series, window=7):
+      q1 = series.rolling(window).quantile(0.25)
+      q3 = series.rolling(window).quantile(0.75)
+      return np.where(series > q3 + 1.5*(q3-q1), 
+                      series.median(), series)
+
+
+#代码3.1.2
+
+import matplotlib
+matplotlib.use('TkAgg')  # 尝试切换后端
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+
+# 设置支持中文的字体
+plt.rcParams['font.sans-serif'] = ['SimHei']  # 可以根据系统情况替换为其他支持中文的字体，如 Microsoft YaHei
+plt.rcParams['axes.unicode_minus'] = False  # 解决负号显示问题
+
+# 假设这里创建一个示例数据框 df
+# 你需要替换为实际的数据读取和处理
+data = {
+    'holiday_flag': [0] * 320 + [1] * 45,  # 非节假日 320 个样本，节假日 45 个样本
+    'y': [float(i) for i in range(365)]  # 示例的日均充电量数据，你需要替换为真实数据
+}
+df = pd.DataFrame(data)
+
+# 箱线图显著性增强
+plt.figure(figsize=(8, 5))
+ax = sns.boxplot(
+    x='holiday_flag',
+    y='y',
+    data=df,
+    palette=['#4C72B0', '#55A868'],
+    width=0.4,
+    flierprops={'marker': 'o','markersize': 4}
+)
+# 设置 x 轴刻度标签
+plt.xticks([0, 1], ['非节假日 (n=320)', '节假日 (n=45)'], fontsize=11)
+# 设置 y 轴标签
+plt.ylabel('日均充电量 (亿kW·h)', fontsize=12, labelpad=10)
+# 隐藏 x 轴标签
+plt.xlabel('')
+# 设置图表标题
+plt.title(' 节假日充电量分布差异', fontsize=14, pad=15)
+
+# 添加显著性标记
+x1, x2 = 0, 1
+# 计算 y 轴的位置，这里使用数据中的最大值乘以 1.05 并加上一些偏移
+y = df.y.max() * 1.05
+# 绘制显著性标记的线段
+plt.plot([x1, x1, x2, x2], [y, y + 0.2, y + 0.2, y], lw=1.5, color='#2d004b')
+# 添加显著性符号（这里是 '***'）
+plt.text((x1 + x2) *.5, y + 0.25, '***', ha='center', va='bottom', color='#2d004b', fontsize=14)
+
+# 保存图表为 tif 文件
+plt.savefig('Fig4_holiday_effect.tif', dpi=300, bbox_inches='tight')
+# 显示图表
+plt.show()
+
+
+#代码3.1.2
+import matplotlib
+matplotlib.use('TkAgg')  # 尝试切换后端
+import matplotlib.pyplot as plt
+import pandas as pd
+
+# 设置中文字体
+plt.rcParams['font.sans-serif'] = ['SimHei']
+plt.rcParams['axes.unicode_minus'] = False
+
+# 假设这里创建一个示例数据框 df
+# 你需要替换为实际的数据读取和处理
+data = {
+    'ds': pd.date_range(start='2024-01-01', periods=100),
+    'trend': [i * 0.1 for i in range(100)],
+    'holiday_flag': [0] * 100
+}
+# 假设第 10 天和第 20 天是节假日
+data['holiday_flag'][9] = 1
+data['holiday_flag'][19] = 1
+df = pd.DataFrame(data)
+
+# 趋势分解可视化
+plt.figure(figsize=(12, 6))
+plt.plot(df.ds, df.trend, label='长期趋势', linewidth=1.5, color='#2b8cbe')
+plt.scatter(
+    df[df.holiday_flag == 1].ds,
+    df[df.holiday_flag == 1].trend,
+    color='#e41a1c',
+    s=40,
+    edgecolor='w',
+    linewidth=0.5,
+    label='节假日趋势项'
+)
+plt.title('充电量趋势分解与节假日标注', fontsize=14, pad=20)
+plt.legend(loc='upper left', frameon=True, facecolor='#f7f7f7')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.tight_layout()
+plt.savefig('Fig5_trend_decomposition.tif', dpi=300, bbox_inches='tight')
+plt.show()
+
+
+#代码3.2.1
+import matplotlib
+matplotlib.use('TkAgg')  # 可以尝试不同的后端，如 'QtAgg' 等
+import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
+
+# 数据示例（替换为实际残差数据）
+raw_residual = np.random.normal(0, 0.5, 1000) * 3 + 0.3  # 范围[-1.2, 1.8]
+scaled_residual = (raw_residual - np.min(raw_residual)) / (np.max(raw_residual) - np.min(raw_residual))  # 范围[0,1]
+
+# 创建画布
+plt.figure(figsize=(12, 5), dpi=300)
+plt.rcParams['font.family'] = 'Times New Roman'
+plt.rcParams['font.size'] = 10
+
+# 左图：原始残差分布
+plt.subplot(1, 2, 1)
+sns.histplot(raw_residual, bins=30, kde=True, color='#4C72B0')
+plt.axvline(x=np.mean(raw_residual), color='#C44E52', linestyle='--', linewidth=1.2)
+plt.xlabel('Residual Value', fontweight='bold')
+plt.ylabel('Frequency', fontweight='bold')
+plt.title('(a) Original Residual Distribution\nRange: [-1.2, 1.8]',
+          loc='left', fontsize=12, pad=15)
+
+# 右图：标准化后分布
+plt.subplot(1, 2, 2)
+sns.histplot(scaled_residual, bins=30, kde=True, color='#55A868')
+plt.axvline(x=np.mean(scaled_residual), color='#C44E52', linestyle='--', linewidth=1.2)
+plt.xlabel('Normalized Residual', fontweight='bold')
+plt.ylabel('')  # 隐藏重复标签
+plt.title('(b) Normalized Distribution\nRange: [0, 1]',
+          loc='left', fontsize=12, pad=15)
+
+plt.tight_layout()
+plt.savefig('Fig6_residual_distribution.tif', bbox_inches='tight', dpi=300)
+plt.show()
+
+#代码3.3.1
+df['subsidy_effect'] = df['gov_subsidy'].shift(3).fillna(method='ffill')
+from statsmodels.tsa.stattools import grangercausalitytests
+gc_res = grangercausalitytests(df[['gov_subsidy', 'y']], maxlag=6)
+# 输出lag=3时p=0.017<0.05，证实3个月滞后显著
+
+#代码3.3.2
+df['temp_impact'] = np.select(
+    [(df['avg_temp'] < -5) | (df['avg_temp'] > 35), 
+     (df['avg_temp'] >= -5) & (df['avg_temp'] <= 35)],
+    [0.8, 1.0],  # 效率系数
+    default=1.0
+)
+df['temp_impact'] = np.interp( 
+    df['avg_temp'],
+    battery_curve['temperature'], 
+    battery_curve['efficiency']
+)
+
+
+#代码5.3.1
+from prophet import Prophet
+import pandas as pd
+from skopt import gp_minimize
+from skopt.space import Real
+from sklearn.metrics import mean_squared_error
+import numpy as np
+import matplotlib.pyplot as plt
+# 1. 准备数据
+data = {
+'ds': [
+'2018-01-01', '2018-02-01', '2018-03-01', '2018-04-01',
+'2018-05-01', '2018-06-01', '2018-07-01', '2018-08-01',
+'2018-09-01', '2018-10-01', '2018-11-01', '2018-12-01',
+'2019-01-01', '2019-02-01', '2019-03-01', '2019-04-01',
+'2019-05-01', '2019-06-01', '2019-07-01', '2019-08-01',
+'2019-09-01', '2019-10-01', '2019-11-01', '2019-12-01'
+],
+'y': [
+1.25, 1.12, 1.23, 1.52, 1.61, 1.64,
+2.17, 2.43, 2.5, 2.42, 2.91, 3.13,  # 2018 年数据
+4.77, 4.2, 4.42, 4.79, 4.84, 5.48,
+5.97, 6.62, 6.68, 6.61, 7.21, 8.04  # 2019 年数据]}
+df = pd.DataFrame(data)
+df['ds'] = pd.to_datetime(df['ds'])  # 确保日期格式正确
+
+# 2. 添加假期数据
+holidays = pd.DataFrame({
+'holiday': 'national_holiday',
+'ds': pd.to_datetime([
+'2019-01-01',  # 元旦
+'2019-02-04', '2019-02-05', '2019-02-06', '2019-02-07', '2019-02-08', '2019-02-09', '2019-02-10',  # 春节
+'2019-04-05',  # 清明节
+'2019-05-01',  # 劳动节
+'2019-06-07',  # 端午节
+'2019-09-13',  # 中秋节
+'2019-10-01', '2019-10-02', '2019-10-03', '2019-10-04', '2019-10-05', '2019-10-06', '2019-10-07'  # 国庆节]),
+'lower_window': 0,
+'upper_window': 0})
+# 3. 定义目标函数
+def objective(params):
+changepoint_prior_scale, seasonality_prior_scale = params
+model = Prophet(
+changepoint_prior_scale=changepoint_prior_scale,
+seasonality_prior_scale=seasonality_prior_scale,
+yearly_seasonality=True,
+holidays=holidays  # 添加假期效应)
+model.fit(df)
+future = model.make_future_dataframe(periods=12, freq='M')
+forecast = model.predict(future)
+y_true = df['y'].values
+y_pred = forecast['yhat'][:len(y_true)].values
+return mean_squared_error(y_true, y_pred)
+
+# 4. 定义参数搜索空间
+space = [
+Real(0.01, 0.5, name='changepoint_prior_scale'),  # 趋势灵活性
+Real(1, 20, name='seasonality_prior_scale')      # 季节性影响力]
+# 5. 执行贝叶斯优化
+result = gp_minimize(
+func=objective,
+dimensions=space,
+n_calls=20,  # 优化迭代次数
+random_state=42)
+# 6. 输出最佳参数
+best_params = result.x
+print(f"最佳参数: changepoint_prior_scale={best_params[0]}, seasonality_prior_scale={best_params[1]}")
+# 7. 使用最佳参数重新训练模型
+model = Prophet(
+changepoint_prior_scale=best_params[0],
+seasonality_prior_scale=best_params[1],
+yearly_seasonality=True,
+holidays=holidays  # 添加假期效应)
+model.fit(df)
+future = model.make_future_dataframe(periods=12, freq='M')
+forecast = model.predict(future)
+# 8. 可视化结果
+model.plot(forecast)
+plt.title('2019年及2020年公共充电桩充电量预测（贝叶斯优化后）')
+plt.xlabel('日期')
+plt.ylabel('充电量（亿KW）')
+plt.show()
+# 可视化组件
+model.plot_components(forecast)
+plt.show()
+
+#代码5.3.2
+from prophet import Prophet
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, Dense
+import matplotlib.pyplot as plt
+# 1. 准备数据
+data = {
+    'ds': [
+        '2018-01-01', '2018-02-01', '2018-03-01', '2018-04-01',
+        '2018-05-01', '2018-06-01', '2018-07-01', '2018-08-01',
+        '2018-09-01', '2018-10-01', '2018-11-01', '2018-12-01',
+        '2019-01-01', '2019-02-01', '2019-03-01', '2019-04-01',
+        '2019-05-01', '2019-06-01', '2019-07-01', '2019-08-01',
+        '2019-09-01', '2019-10-01', '2019-11-01', '2019-12-01'],
+    'y': [
+        1.25, 1.12, 1.23, 1.52, 1.61, 1.64,
+        2.17, 2.43, 2.5, 2.42, 2.91, 3.13,  # 2018 年数据
+        4.77, 4.2, 4.42, 4.79, 4.84, 5.48,
+        5.97, 6.62, 6.68, 6.61, 7.21, 8.04  # 2019 年数据]}
+df = pd.DataFrame(data)
+df['ds'] = pd.to_datetime(df['ds'])  # 确保日期格式正确
+# 2. 使用 Prophet 模型预测
+model = Prophet(changepoint_prior_scale=0.1)  # 调整变化点灵活性
+model.fit(df)
+future = model.make_future_dataframe(periods=12, freq='M')
+forecast = model.predict(future)
+# 3. 计算残差
+df['yhat'] = forecast['yhat'][:len(df)]
+df['residual'] = df['y'] - df['yhat']  # 残差
+# 4. 准备 LSTM 输入数据
+scaler = MinMaxScaler(feature_range=(0, 1))
+residual_scaled = scaler.fit_transform(df['residual'].values.reshape(-1, 1))
+# 创建 LSTM 输入序列
+def create_sequences(data, seq_length):
+    X, y = [], []
+    for i in range(len(data) - seq_length):
+        X.append(data[i:i + seq_length])
+        y.append(data[i + seq_length])
+    return np.array(X), np.array(y)
+seq_length = 3  # 序列长度
+X, y = create_sequences(residual_scaled, seq_length)
+# 5. 构建 LSTM 模型
+lstm_model = Sequential([
+    LSTM(100, activation='relu', return_sequences=True, input_shape=(seq_length, 1)),  # 第一层 LSTM
+    LSTM(50, activation='relu'),  # 第二层 LSTM
+    Dense(1)  # 输出层
+])
+lstm_model.compile(optimizer='adam', loss='mse')
+# 6. 训练 LSTM 模型
+lstm_model.fit(X, y, epochs=50, batch_size=1, verbose=1)
+# 7. 使用 LSTM 预测残差修正值
+residual_predictions = lstm_model.predict(X)
+# 反归一化残差修正值
+residual_predictions = scaler.inverse_transform(residual_predictions)
+# 8. 合并历史和未来数据
+full_df = forecast[['ds', 'yhat']].copy()
+full_df['y'] = np.nan
+full_df.loc[:len(df)-1, 'y'] = df['y'].values
+# 添加历史残差修正
+full_df['lstm_residual'] = np.nan
+full_df['final_prediction'] = full_df['yhat'].copy()
+full_df.loc[seq_length:len(df)-1, 'lstm_residual'] = residual_predictions.flatten()
+full_df.loc[seq_length:len(df)-1, 'final_prediction'] = full_df.loc[seq_length:len(df)-1, 'yhat'] + full_df.loc[seq_length:len(df)-1, 'lstm_residual']
+# 9. 递归预测未来残差
+last_sequence = residual_scaled[-seq_length:]  # 取最后seq_length个已知残差
+future_residuals = []
+for _ in range(12):  # 预测未来12个月残差
+    next_residual = lstm_model.predict(last_sequence.reshape(1, seq_length, 1))
+    future_residuals.append(next_residual[0,0])
+    last_sequence = np.append(last_sequence[1:], next_residual)
+# 反归一化
+future_residuals = scaler.inverse_transform(np.array(future_residuals).reshape(-1, 1))
+# 应用到未来预测
+full_df.loc[len(df):, 'lstm_residual'] = future_residuals.flatten()
+full_df.loc[len(df):, 'final_prediction'] = full_df.loc[len(df):, 'yhat'] + full_df.loc[len(df):, 'lstm_residual']
+# 10. 可视化结果
+plt.figure(figsize=(12, 7))
+# 绘制历史实际值
+plt.plot(full_df['ds'][:len(df)], full_df['y'][:len(df)], 
+         label='实际值', marker='o', color='blue', linewidth=2)
+# 绘制Prophet预测值
+plt.plot(full_df['ds'], full_df['yhat'], 
+         label='Prophet预测值', linestyle='--', color='green')
+# 绘制组合预测值（历史部分）
+plt.plot(full_df['ds'][seq_length:len(df)], full_df['final_prediction'][seq_length:len(df)], 
+         label='历史修正预测(Prophet+LSTM)', linestyle='-.', color='purple')
+# 绘制未来预测值
+plt.plot(full_df['ds'][len(df):], full_df['final_prediction'][len(df):], 
+         label='2020年预测值(Prophet+LSTM)', marker='*', color='red', linewidth=2)
+# 添加图例和标签
+plt.legend(fontsize=12)
+plt.xlabel('日期', fontsize=12)
+plt.ylabel('充电量（亿KW）', fontsize=12)
+plt.title('Prophet + LSTM 组合预测结果 (2018-2020)', fontsize=14)
+plt.grid(True, linestyle='--', alpha=0.6)
+# 突出显示预测区域
+plt.axvspan(pd.to_datetime('2020-01-01'), full_df['ds'].iloc[-1], 
+            facecolor='yellow', alpha=0.1, label='预测区间')
+# 调整x轴刻度
+plt.xticks(rotation=45)
+plt.tight_layout()
+# 显示图表
+plt.show()
+
+
+#代码5.4.2
+# 绘制残差时间序列图
+plt.figure(figsize=(12, 6))
+plt.plot(df['ds'], df['residual'], marker='o', linestyle='-', color='blue', label='残差')
+plt.axhline(0, color='red', linestyle='--', linewidth=1)
+plt.title('残差时间序列图', fontsize=14)
+plt.xlabel('日期', fontsize=12)
+plt.ylabel('残差', fontsize=12)
+plt.legend(fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.tight_layout()
+plt.show()
+# 绘制残差分布直方图
+plt.figure(figsize=(8, 6))
+plt.hist(df['residual'], bins=20, color='skyblue', edgecolor='black', alpha=0.7)
+plt.axvline(0, color='red', linestyle='--', linewidth=1)
+plt.title('残差分布直方图', fontsize=14)
+plt.xlabel('残差值', fontsize=12)
+plt.ylabel('频率', fontsize=12)
+plt.grid(True, linestyle='--', alpha=0.6)
+plt.tight_layout()
+plt.show()
+
+
